@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Land Suitability Result</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body, html { margin: 0; padding: 0; height: 100%; }
+    #map { height: 100vh; }
+    #info-box {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: white;
+      padding: 12px;
+      font-size: 14px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      z-index: 1000;
+      max-width: 300px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="info-box">Loading...</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+<script>
+const map = L.map('map').setView([7.85, 80.75], 9);
+
+// Base map
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 18,
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+// Load survey latest submission
+const surveyURL = `https://services5.arcgis.com/MpnsppwdopkoFFFQ/arcgis/rest/services/Land_Selection_Data/FeatureServer/0/query?where=1=1&outFields=*&orderByFields=CreationDate%20DESC&f=geojson`;
+
+Promise.all([
+  fetch(surveyURL).then(r => r.json()),
+  fetch('https://raw.githubusercontent.com/thath19/soil_map/refs/heads/main/Soil_type.geojson').then(r => r.json()),
+  fetch('https://raw.githubusercontent.com/thath19/Water_Sources/main/River_coverageNW.geojson').then(r => r.json()),
+  fetch('https://raw.githubusercontent.com/thath19/Land-Cover/main/built.geojson').then(r => r.json())
+]).then(([surveyData, soilData, riverData, builtData]) => {
+  const latest = surveyData.features[0];
+  const userPoint = turf.point(latest.geometry.coordinates);
+  const latlng = [userPoint.geometry.coordinates[1], userPoint.geometry.coordinates[0]];
+
+  const buffer = turf.buffer(userPoint, 0.5, { units: 'kilometers' });
+  const bufferLayer = L.geoJSON(buffer, { style: { color: 'green', fillOpacity: 0.2 } }).addTo(map);
+  map.fitBounds(bufferLayer.getBounds());
+
+  // Soil match
+  let soilMatch = soilData.features.find(f => turf.booleanPointInPolygon(userPoint, f));
+  let soilType = soilMatch?.properties?.DOMSOI || "Unknown";
+  let cropList = soilMatch?.properties?.Crop || "N/A";
+
+  // Water distance (from rivers)
+  let nearestDistance = Infinity;
+  riverData.features.forEach(river => {
+    const line = turf.lineString(river.geometry.coordinates);
+    const dist = turf.pointToLineDistance(userPoint, line, { units: 'kilometers' });
+    if (dist < nearestDistance) nearestDistance = dist;
+  });
+
+  // Built-up check
+  let builtup = builtData.features.some(f => turf.booleanPointInPolygon(userPoint, f)) ? "Yes" : "No";
+
+  // Info box
+  document.getElementById('info-box').innerHTML = `
+    <h3>Analysis Result</h3>
+    <strong>Soil Type:</strong> ${soilType}<br/>
+    <strong>Suitable Crops:</strong> ${cropList}<br/>
+    <strong>Distance to Nearest Water Source:</strong> ${nearestDistance.toFixed(2)} km<br/>
+    <strong>Built-up Area:</strong> ${builtup}<br/>
+  `;
+
+}).catch(err => {
+  console.error(err);
+  document.getElementById('info-box').innerHTML = "Failed to load data.";
+});
+</script>
+</body>
+</html>
