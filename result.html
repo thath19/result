@@ -37,13 +37,34 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-Promise.all([
-  fetch('https://services5.arcgis.com/MpnsppwdopkoFFFQ/arcgis/rest/services/survey123_6d8b1cb7a97148d3a1642db84cf7943d_results/FeatureServer/0/query?where=1=1&outFields=*&orderByFields=CreationDate%20DESC&f=geojson').then(r => r.json()),
-  fetch('https://raw.githubusercontent.com/thath19/soil_map/main/Soil_type.geojson').then(r => r.json()),
-  fetch('https://raw.githubusercontent.com/thath19/Water_Sources/main/River_coverageNW.geojson').then(r => r.json()),
-  fetch('https://raw.githubusercontent.com/thath19/Land-Cover/main/built.geojson').then(r => r.json())
-]).then(([surveyData, soilData, riverData, builtData]) => {
+// Debug helper to log loading status
+function safeFetch(url, name) {
+  return fetch(url)
+    .then(r => {
+      if (!r.ok) throw new Error(`${name} failed: ${r.statusText}`);
+      return r.json();
+    })
+    .catch(e => {
+      console.error(`❌ Error loading ${name}:`, e);
+      throw e;
+    });
+}
 
+Promise.all([
+  safeFetch(
+    'https://services5.arcgis.com/MpnsppwdopkoFFFQ/arcgis/rest/services/survey123_6d8b1cb7a97148d3a1642db84cf7943d_results/FeatureServer/0/query?where=1=1&outFields=*&orderByFields=CreationDate%20DESC&f=geojson',
+    'Survey Results'
+  ),
+  safeFetch('https://raw.githubusercontent.com/thath19/soil_map/main/Soil_type.geojson', 'Soil Layer'),
+  safeFetch('https://raw.githubusercontent.com/thath19/Water_Sources/main/River_coverageNW.geojson', 'River Layer'),
+  safeFetch('https://raw.githubusercontent.com/thath19/Land-Cover/main/built.geojson', 'Built Layer')
+])
+.then(([surveyData, soilData, riverData, builtData]) => {
+  console.log("✅ All layers loaded");
+    if (!soilData.features || soilData.features.length === 0) {
+        document.getElementById('info-box').innerHTML = "No soil data found.";
+        return;
+    }
   if (!surveyData.features || surveyData.features.length === 0) {
     document.getElementById('info-box').innerHTML = "No survey data found.";
     return;
@@ -104,8 +125,9 @@ Promise.all([
     <strong>Buffer Mode:</strong> ${pointInBuffer ? "Within Buffer" : "Outside Buffer"}<br/>
     <strong>Crop Selected:</strong> ${selectedCrop}<br/>
   `;
-}).catch(err => {
-  console.error("Error loading layers:", err);
+})
+.catch(err => {
+  console.error("🚫 One or more data layers failed to load:", err);
   document.getElementById('info-box').innerHTML = "Error loading data.";
 });
 </script>
