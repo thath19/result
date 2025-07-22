@@ -82,100 +82,10 @@ fetch(surveyURL)
   });
 </script>
 
-// // Debug helper to log loading status
-// function safeFetch(url, name) {
-//   return fetch(url)
-//     .then(r => {
-//       if (!r.ok) throw new Error(`${name} failed: ${r.statusText}`);
-//       return r.json();
-//     })
-//     .catch(e => {
-//       console.error(`❌ Error loading ${name}:`, e);
-//       throw e;
-//     });
-// }
+<script src="result1.js"></script>
 
-// Promise.all([
-//   safeFetch(
-//     'https://services5.arcgis.com/MpnsppwdopkoFFFQ/arcgis/rest/services/Feedbacks_22_view/FeatureServer/0/query?where=1=1&outFields=*&f=geojson',
-//     'Survey Results'
-//   ),
-//   safeFetch('https://raw.githubusercontent.com/thath19/soil_map/main/Soil_type.geojson', 'Soil Layer'),
-//   safeFetch('https://raw.githubusercontent.com/thath19/Water_Sources/main/River_coverageNW.geojson', 'River Layer'),
-//   safeFetch('https://raw.githubusercontent.com/thath19/Land-Cover/main/built.geojson', 'Built Layer')
-// ])
-// .then(([surveyData, soilData, riverData, builtData]) => {
-//   console.log("✅ All layers loaded");
-//     if (!soilData.features || soilData.features.length === 0) {
-//         document.getElementById('info-box').innerHTML = "No soil data found.";
-//         return;
-//     }
-//   if (!surveyData.features || surveyData.features.length === 0) {
-//     document.getElementById('info-box').innerHTML = "No survey data found.";
-//     return;
-//   }
+</body>
 
-//   const latest = surveyData.features[0];
-//   const userPoint = turf.point(latest.geometry.coordinates);
-//   const selectedCrop = latest.properties?.type_of_vegetable || "Unknown";  // Adjusted for your field names
-//   const buffer = turf.buffer(userPoint, 0.5, { units: 'kilometers' });
-
-//   let pointInBuffer = false;
-
-//   // River distance
-//   let nearestWater = Infinity;
-//   riverData.features.forEach(river => {
-//     const line = turf.lineString(river.geometry.coordinates);
-//     const dist = turf.pointToLineDistance(userPoint, line, { units: 'kilometers' });
-//     if (dist < nearestWater) nearestWater = dist;
-//   });
-
-//   // Built-up area check
-//   const isBuilt = builtData.features.some(f => turf.booleanPointInPolygon(userPoint, f));
-
-//   // Soil type
-//   const matchedSoil = soilData.features.find(f => turf.booleanPointInPolygon(userPoint, f));
-//   const soilType = matchedSoil?.properties?.DOMSOI || "Unknown";
-//   const suitableCrops = matchedSoil?.properties?.Crop || "N/A";
-
-//   // Add river and built-up
-//   L.geoJSON(riverData, { style: { color: '#3498db', weight: 2 }}).addTo(map);
-//   L.geoJSON(builtData, { style: { color: '#e74c3c', fillOpacity: 0.4 }}).addTo(map);
-
-//   // Show buffer if inside it
-//   if (turf.booleanPointInPolygon(userPoint, buffer)) {
-//     pointInBuffer = true;
-//     L.geoJSON(buffer, { style: { color: 'green', fillOpacity: 0.2 } }).addTo(map);
-//     L.geoJSON(userPoint, {
-//       pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 6, color: 'black', fillColor: 'yellow', fillOpacity: 1 })
-//     }).addTo(map);
-//     map.fitBounds(L.geoJSON(buffer).getBounds());
-//   } else {
-//     // Filter soil layer based on selected crop
-//     const filteredSoil = {
-//       type: "FeatureCollection",
-//       features: soilData.features.filter(f =>
-//         (f.properties?.Crop || "").toLowerCase().includes(selectedCrop.toLowerCase()))
-//     };
-//     L.geoJSON(filteredSoil, { style: { color: '#8e44ad', fillOpacity: 0.3 } }).addTo(map);
-//     map.fitBounds(L.geoJSON(filteredSoil).getBounds());
-//   }
-
-//   document.getElementById('info-box').innerHTML = `
-//     <h3>Analysis Result</h3>
-//     <strong>Soil Type:</strong> ${soilType}<br/>
-//     <strong>Suitable Crops:</strong> ${suitableCrops}<br/>
-//     <strong>Distance to Water:</strong> ${nearestWater.toFixed(2)} km<br/>
-//     <strong>Built-up Area:</strong> ${isBuilt ? "Yes" : "No"}<br/>
-//     <strong>Buffer Mode:</strong> ${pointInBuffer ? "Within Buffer" : "Outside Buffer"}<br/>
-//     <strong>Crop Selected:</strong> ${selectedCrop}<br/>
-//   `;
-// })
-// .catch(err => {
-//   console.error("🚫 One or more data layers failed to load:", err);
-//   document.getElementById('info-box').innerHTML = "Error loading data.";
-// });
-// </script>
-
-// </body>
 </html>
+
+
