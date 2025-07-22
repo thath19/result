@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Crop Suitability Result</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -32,27 +32,31 @@
 <script>
 const map = L.map('map').setView([7.85, 80.75], 8);
 
-// Base layer
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-// Load layers + survey
 Promise.all([
   fetch('https://services5.arcgis.com/MpnsppwdopkoFFFQ/arcgis/rest/services/survey123_6d8b1cb7a97148d3a1642db84cf7943d_results/FeatureServer/0/query?where=1=1&outFields=*&orderByFields=CreationDate%20DESC&f=geojson').then(r => r.json()),
-  fetch('https://raw.githubusercontent.com/thath19/soil_map/refs/heads/main/Soil_type.geojson').then(r => r.json()),
+  fetch('https://raw.githubusercontent.com/thath19/soil_map/main/Soil_type.geojson').then(r => r.json()),
   fetch('https://raw.githubusercontent.com/thath19/Water_Sources/main/River_coverageNW.geojson').then(r => r.json()),
   fetch('https://raw.githubusercontent.com/thath19/Land-Cover/main/built.geojson').then(r => r.json())
 ]).then(([surveyData, soilData, riverData, builtData]) => {
+
+  if (!surveyData.features || surveyData.features.length === 0) {
+    document.getElementById('info-box').innerHTML = "No survey data found.";
+    return;
+  }
+
   const latest = surveyData.features[0];
   const userPoint = turf.point(latest.geometry.coordinates);
-  const selectedCrop = latest.properties?.Crop || "Rice"; // Fallback
+  const selectedCrop = latest.properties?.type_of_vegetable || "Unknown";  // Adjusted for your field names
   const buffer = turf.buffer(userPoint, 0.5, { units: 'kilometers' });
 
   let pointInBuffer = false;
 
-  // Water source - Nearest river distance
+  // River distance
   let nearestWater = Infinity;
   riverData.features.forEach(river => {
     const line = turf.lineString(river.geometry.coordinates);
@@ -60,19 +64,19 @@ Promise.all([
     if (dist < nearestWater) nearestWater = dist;
   });
 
-  // Built-up check
+  // Built-up area check
   const isBuilt = builtData.features.some(f => turf.booleanPointInPolygon(userPoint, f));
 
-  // Soil check
+  // Soil type
   const matchedSoil = soilData.features.find(f => turf.booleanPointInPolygon(userPoint, f));
   const soilType = matchedSoil?.properties?.DOMSOI || "Unknown";
   const suitableCrops = matchedSoil?.properties?.Crop || "N/A";
 
-  // Add base layers
+  // Add river and built-up
   L.geoJSON(riverData, { style: { color: '#3498db', weight: 2 }}).addTo(map);
   L.geoJSON(builtData, { style: { color: '#e74c3c', fillOpacity: 0.4 }}).addTo(map);
 
-  // Decision logic
+  // Show buffer if inside it
   if (turf.booleanPointInPolygon(userPoint, buffer)) {
     pointInBuffer = true;
     L.geoJSON(buffer, { style: { color: 'green', fillOpacity: 0.2 } }).addTo(map);
@@ -81,7 +85,7 @@ Promise.all([
     }).addTo(map);
     map.fitBounds(L.geoJSON(buffer).getBounds());
   } else {
-    // Show only suitable soil regions for selected crop
+    // Filter soil layer based on selected crop
     const filteredSoil = {
       type: "FeatureCollection",
       features: soilData.features.filter(f =>
@@ -91,7 +95,6 @@ Promise.all([
     map.fitBounds(L.geoJSON(filteredSoil).getBounds());
   }
 
-  // Info
   document.getElementById('info-box').innerHTML = `
     <h3>Analysis Result</h3>
     <strong>Soil Type:</strong> ${soilType}<br/>
@@ -101,9 +104,8 @@ Promise.all([
     <strong>Buffer Mode:</strong> ${pointInBuffer ? "Within Buffer" : "Outside Buffer"}<br/>
     <strong>Crop Selected:</strong> ${selectedCrop}<br/>
   `;
-
 }).catch(err => {
-  console.error(err);
+  console.error("Error loading layers:", err);
   document.getElementById('info-box').innerHTML = "Error loading data.";
 });
 </script>
