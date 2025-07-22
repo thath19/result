@@ -51,10 +51,10 @@ function safeFetch(url, name) {
 }
 
 Promise.all([
-  safeFetch(
-    'https://services5.arcgis.com/MpnsppwdopkoFFFQ/arcgis/rest/services/survey123_6d8b1cb7a97148d3a1642db84cf7943d_results/FeatureServer/0/query?where=1=1&outFields=*&orderByFields=CreationDate%20DESC&f=geojson',
-    'Survey Results'
-  ),
+//   safeFetch(
+//     'https://services5.arcgis.com/MpnsppwdopkoFFFQ/arcgis/rest/services/survey123_6d8b1cb7a97148d3a1642db84cf7943d_results/FeatureServer/0/query?where=1=1&outFields=*&orderByFields=CreationDate%20DESC&f=geojson',
+//     'Survey Results'
+//   ),
   safeFetch('https://raw.githubusercontent.com/thath19/soil_map/main/Soil_type.geojson', 'Soil Layer'),
   safeFetch('https://raw.githubusercontent.com/thath19/Water_Sources/main/River_coverageNW.geojson', 'River Layer'),
   safeFetch('https://raw.githubusercontent.com/thath19/Land-Cover/main/built.geojson', 'Built Layer')
