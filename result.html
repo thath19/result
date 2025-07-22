@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Latest Submission Display</title>
+  <title>Crop Suitability Result</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
@@ -24,9 +24,10 @@
 <body>
 
 <div id="map"></div>
-<div id="info-box">Loading latest submission...</div>
+<div id="info-box">Loading...</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
 <script>
 const map = L.map('map').setView([7.85, 80.75], 8);
@@ -36,49 +37,46 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
+
+// Fetch Survey123 data (replace "0" with correct layer index if needed)
 const surveyURL = "https://services5.arcgis.com/MpnsppwdopkoFFFQ/arcgis/rest/services/Land_Selection_Web_Map1/FeatureServer/0/query?where=1=1&outFields=*&f=geojson";
 
 fetch(surveyURL)
   .then(res => res.json())
   .then(data => {
     if (!data.features || data.features.length === 0) {
-      document.getElementById("info-box").innerHTML = "No submissions found.";
+      document.getElementById("info-box").innerHTML = "No survey data found.";
       return;
     }
 
-    // Replace 'creation_date' with the actual date field in your data
-    const dateField = 'creation_date';
-
-    // Sort features by date descending (latest first)
-    const sortedFeatures = data.features.sort((a, b) => {
-      const dateA = new Date(a.properties[dateField]);
-      const dateB = new Date(b.properties[dateField]);
-      return dateB - dateA; // latest first
-    });
-
-    const latestFeature = sortedFeatures[0];
-
-    const userLayer = L.geoJSON(latestFeature, {
+    const layer = L.geoJSON(data, {
       pointToLayer: (feature, latlng) => {
         return L.circleMarker(latlng, {
-          radius: 8,
-          fillColor: "blue",
+          radius: 6,
+          fillColor: "green",
           color: "black",
           weight: 1,
           opacity: 1,
-          fillOpacity: 0.9
+          fillOpacity: 0.8
         });
-      }
+      },
+    
     }).addTo(map);
 
-    map.fitBounds(userLayer.getBounds());
-    document.getElementById("info-box").innerHTML = "Latest submission displayed.";
+    map.fitBounds(layer.getBounds());
+
+    document.getElementById("info-box").innerHTML = "Survey points loaded successfully.";
   })
   .catch(err => {
     console.error("Error loading survey data:", err);
-    document.getElementById("info-box").innerHTML = "Error loading submissions.";
+    document.getElementById("info-box").innerHTML = "Error loading survey data.";
   });
 </script>
 
+<script src="result1.js"></script>
+
 </body>
+
 </html>
+
+
