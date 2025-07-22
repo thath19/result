@@ -44,7 +44,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 // Fetch Survey123 data (replace "0" with correct layer index if needed)
-const surveyURL = "https://services5.arcgis.com/MpnsppwdopkoFFFQ/arcgis/rest/services/Feedbacks_22_view/FeatureServer/0/query?where=1=1&outFields=*&f=geojson";
+const surveyURL = "https://services5.arcgis.com/MpnsppwdopkoFFFQ/arcgis/rest/services/Land_Selection_Web_Map1/FeatureServer/0/query?where=1=1&outFields=*&f=geojson";
 
 fetch(surveyURL)
   .then(res => res.json())
@@ -65,11 +65,7 @@ fetch(surveyURL)
           fillOpacity: 0.8
         });
       },
-      onEachFeature: (feature, layer) => {
-        const crop = feature.properties?.Crop || "Unknown Crop";
-        const created = feature.properties?.CreationDate || "N/A";
-        layer.bindPopup(`<strong>Crop:</strong> ${crop}<br/><strong>Date:</strong> ${created}`);
-      }
+    
     }).addTo(map);
 
     map.fitBounds(layer.getBounds());
